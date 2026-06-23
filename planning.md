@@ -76,15 +76,33 @@ This is the hardest call. The test: *strip the opinion language — does a speci
 
 The deciding factor is **specificity**, not sophistication. A long eloquent post that asserts without analyzing is still OPINIONATED. A short post that names a specific technique and explains its effect is ANALYTICAL.
 
-**Worked example (pre-annotation):**
+**Pre-annotation worked example:**
 *"The third act is where most blockbusters fall apart, and this one is no exception."*
 - Could be ANALYTICAL (craft-level claim about structure) or OPINIONATED (no specifics about this film).
 - **Decision: OPINIONATED** — the craft framing is borrowed, not applied. No specific scene or mechanism is named. Strip the opinion: nothing checkable remains.
 
-**Worked example (pre-annotation):**
+**Pre-annotation worked example:**
 *"Does anyone else feel like the color grading in this film is doing a lot of heavy lifting emotionally?"*
 - Could be SOCIAL (it's a question) or ANALYTICAL (craft observation).
 - **Decision: ANALYTICAL** — the question is rhetorical. Strip it: a specific craft claim (color grading, emotional weight) remains.
+
+**Hard case from actual annotation (OPINIONATED vs. ANALYTICAL):**
+*"In every single movie of the series, there is a horrible ratio between action scene volume and conversation volume. Every time, I need to up the volume so I can at least understand what's being said..."*
+- The post identifies a specific, observable pattern across a franchise (volume mixing). That sounds like a craft observation.
+- But it doesn't explain *why* this happens or connect it to any intentional filmmaking choice — it's describing a frustration, not analyzing a technique.
+- **Decision: OPINIONATED** (Groq confidence: 0.80 — the lowest in the dataset). The observation is specific but the reasoning stays at the level of personal reaction. No mechanism or intent is analyzed.
+
+**Hard case from actual annotation (REACTIVE vs. OPINIONATED):**
+*"Inglourious Basterds was a far better film."*
+- Four words with a comparative claim — "far better" implies a standard of comparison.
+- But there's no reason given, no context, no criterion for "better."
+- **Decision: REACTIVE** — the comparative framing gives the illusion of an argument, but strip it: nothing remains except a preference. A reason would need to accompany the comparison to reach OPINIONATED.
+
+**Hard case from actual annotation (OPINIONATED vs. ANALYTICAL):**
+*"I've heard over and over that Vin Diesel and Terry Crews are big nerds who play D&D. I've even heard they play together. Mr. Diesel also seems to have a lot of input into his movies, even having director approval..."*
+- Assembles specific facts about a filmmaker's background and creative control.
+- Could be ANALYTICAL (connecting biographical context to film output) but never makes the connection — the post stops at observation without drawing a conclusion about the films.
+- **Decision: OPINIONATED** — specific facts without a claim about what those facts mean for the work. Strip the framing: no checkable argument about craft remains.
 
 **Other decision rules:**
 
