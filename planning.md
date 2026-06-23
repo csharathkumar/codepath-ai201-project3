@@ -1,155 +1,185 @@
 # TakeMeter — Planning Document
 
-## Community: r/movies (and r/television)
+---
 
-Movie and TV subreddits are dense with discourse: hot takes on new releases, retrospective reappraisals, actor/director deep dives, and a lot of noise in between. The quality of a "take" in these communities varies widely — from a paragraph of thoughtful craft analysis to "this movie sucked lol." This project tries to make that distinction machine-readable.
+## 1. Community
+
+**Chosen community:** r/movies and r/TrueFilm (Reddit film discussion communities)
+
+r/movies is one of Reddit's largest subreddits (~35M members), where people post reactions to trailers, news, reviews, and discussion threads about films. r/TrueFilm is a smaller, more focused companion sub that explicitly requires substantive discussion — no memes, no low-effort posts. Together they create a spectrum: r/movies runs from "this movie SLAPPED" to thoughtful craft analysis, while r/TrueFilm skews analytical.
+
+This community is a strong fit for classification because discourse quality varies enormously and in identifiable ways. A regular participant in either community immediately recognizes the difference between a one-line hot take and a paragraph analyzing a director's use of negative space — and they have opinions about which is more valuable. That shared intuition is what makes the distinction learnable. The community is also text-heavy and public, which makes data collection straightforward.
 
 ---
 
-## Label Taxonomy
+## 2. Labels
 
-### Why 4 labels?
+**Four labels:** ANALYTICAL, OPINIONATED, REACTIVE, SOCIAL
 
-Pilot reading of ~40 r/movies posts revealed a clear four-way split. Two labels ("analytical" vs. "reactive") were obvious; the middle ground needed subdividing because "has an opinion" covers wildly different post quality.
-
----
-
-### Label Definitions
-
-| Label | Name | One-line definition |
-|---|---|---|
-| 0 | **ANALYTICAL** | Makes a specific, evidence-based argument about craft, narrative, theme, or context |
-| 1 | **OPINIONATED** | States a clear stance with some reasoning, but doesn't go deep on craft |
-| 2 | **REACTIVE** | Pure emotional reaction — no argument, no reasoning, just a response |
-| 3 | **SOCIAL** | Meta-discussion, questions, memes, or off-topic engagement |
-
----
-
-### Detailed Definitions + Examples
-
-#### 0 — ANALYTICAL
-The post makes a *specific claim* and *supports it* with evidence drawn from the film/show itself or relevant context (director's filmography, genre conventions, cinematographic technique, narrative structure, etc.). The take would be informative to someone who hadn't thought about it that way.
+### ANALYTICAL (label 0)
+A post that makes a specific, evidence-based argument about craft, narrative, theme, or historical/genre context — one where the claim would still stand if you stripped out all the opinion language.
 
 **Examples:**
-- "Villeneuve's use of silence in Dune isn't just aesthetic — it mirrors how Paul experiences prescience: information arriving before meaning. The quieter scenes are structurally doing the same work as the exposition."
-- "The first season of The Bear works because every episode is formally mimicking the chaos it depicts. The single-take ep isn't a flex — it's the argument."
-- "What made Breaking Bad's finale land is that it rejected catharsis for consequence. Walt doesn't get redemption, he gets closure — and the show is careful not to conflate the two."
+- *"Villeneuve's use of silence in Dune isn't just aesthetic — it mirrors how Paul experiences prescience: information arriving before meaning. The quieter scenes are structurally doing the same work as the exposition."*
+- *"What made Breaking Bad's finale land is that it rejected catharsis for consequence. Walt doesn't get redemption, he gets closure — and the show is careful not to conflate the two."*
 
-**Key signal:** Would pass the "so what?" test — there's a claim + a reason.
+**Key signal:** Remove "I think / I loved / this was amazing" — does a specific checkable claim remain? If yes: ANALYTICAL.
 
 ---
 
-#### 1 — OPINIONATED
-The post has a discernible position *and* some reasoning, but the reasoning is more assertion than analysis. It might reference plot, performances, or vibes, but doesn't unpack *why* at the craft level.
+### OPINIONATED (label 1)
+A post that takes a clear stance and gives a reason, but the reason is assertion or feeling rather than craft analysis — the author tells you what they thought and why, without unpacking how the film produces that effect.
 
 **Examples:**
-- "Hereditary scared me more than any horror film in years. The family dynamics felt genuinely realistic which made the supernatural stuff hit harder."
-- "I think people are way too harsh on the Hobbit trilogy — it's baggy but it's still visually spectacular and the cast is great."
-- "The ending of Severance season 2 felt rushed. Too many threads, not enough payoff for what the show set up."
+- *"Hereditary scared me more than any horror film in years. The family dynamics felt genuinely realistic which made the supernatural stuff hit harder."*
+- *"I think people are way too harsh on the Hobbit trilogy — it's baggy but it's still visually spectacular and the cast is great."*
 
-**Key signal:** Has an opinion + a reason, but the reason is "I felt X because Y" rather than "X works because of how Z is constructed."
+**Key signal:** Has a position and a reason, but the reason is "I felt X because Y" rather than "X works because of how Z is constructed."
 
 ---
 
-#### 2 — REACTIVE
-A pure response — excitement, disgust, hype, disappointment — with no supporting argument. This includes hyperbolic takes, one-liners, and emotional dumps.
+### REACTIVE (label 2)
+A post that expresses an emotional response — excitement, disgust, hype, disappointment — with no supporting argument. Includes hyperbole, one-liners, ratings without explanation, and emotional dumps.
 
 **Examples:**
-- "GOAT tier. Not even debatable."
-- "Absolute garbage. Two hours of my life I'll never get back."
-- "Holy shit that ending!!! I was not prepared."
-- "Ugh. Another superhero movie."
-- "10/10 no notes"
+- *"GOAT tier. Not even debatable."*
+- *"Absolute garbage. Two hours of my life I'll never get back."*
 
-**Key signal:** No claim that could be argued with — just a reaction.
+**Key signal:** Nothing in the post could be argued with — it is pure reaction.
 
 ---
 
-#### 3 — SOCIAL
-Anything that isn't primarily about evaluating a film/show: meta-questions, recommendation requests, meme-adjacent posts, news links without commentary, "is anyone else watching X?" posts.
+### SOCIAL (label 3)
+A post that is not primarily about evaluating a film or show — instead it facilitates discussion, asks questions, shares news, makes recommendations, or engages socially with the community.
 
 **Examples:**
-- "What's everyone watching this weekend?"
-- "Can someone explain the ending of Donnie Darko to me?"
-- "RIP to a legend 🙏" (on a director's death)
-- "Reminder: new episode drops tonight"
-- "Is the show worth picking up if I haven't seen the original?"
+- *"What's everyone watching this weekend?"*
+- *"Can someone explain the ending of Donnie Darko to me?"*
 
-**Key signal:** Not making a take — facilitating discussion or sharing information.
+**Key signal:** Not making a take — organizing conversation or sharing information.
 
 ---
 
-### Exhaustiveness Check
-
-From pilot reading of 40 posts:
-- ANALYTICAL: ~20%
-- OPINIONATED: ~30%
-- REACTIVE: ~35%
-- SOCIAL: ~15%
-
-Total coverage: ~100% — no post required an "other" bucket in the pilot.
+### Why four and not three?
+REACTIVE and OPINIONATED are meaningfully different: one has reasoning, one doesn't. Collapsing them into "opinion" would lose the distinction between "I hated it because the pacing was off" (Opinionated — has a reason) and "Absolute garbage" (Reactive — no reason). That distinction is exactly what the community cares about.
 
 ---
 
-### Mutual Exclusivity Rules
+## 3. Hard Edge Cases
 
 **The critical boundary: ANALYTICAL vs. OPINIONATED**
 
-This is the hardest call in the taxonomy. The test: *if you removed all the opinion language ("I think", "I loved", "this was amazing"), would the remaining text still contain a specific, checkable claim about how the film works?*
+This is the hardest call. The test: *strip the opinion language — does a specific, checkable claim about how the film works remain?*
 
 - If yes → ANALYTICAL
 - If no → OPINIONATED
 
-Example: *"Nolan's intercutting in Oppenheimer creates a false sense of simultaneity that flatters the audience — the Trinity test and the Senate hearing aren't morally equivalent, but the editing implies they are."* Strip the opinion framing: there's still a specific structural claim (intercutting, false simultaneity, implied moral equivalence). → ANALYTICAL.
+The deciding factor is **specificity**, not sophistication. A long eloquent post that asserts without analyzing is still OPINIONATED. A short post that names a specific technique and explains its effect is ANALYTICAL.
 
-Example: *"The pacing in the second act is where it falls apart — it just loses momentum."* Strip the opinion: "loses momentum" is a feeling, not a structural observation. No specific scene, technique, or mechanism named. → OPINIONATED.
+**Worked example (pre-annotation):**
+*"The third act is where most blockbusters fall apart, and this one is no exception."*
+- Could be ANALYTICAL (craft-level claim about structure) or OPINIONATED (no specifics about this film).
+- **Decision: OPINIONATED** — the craft framing is borrowed, not applied. No specific scene or mechanism is named. Strip the opinion: nothing checkable remains.
 
-The deciding factor is specificity, not sophistication. A long, eloquent post that asserts without analyzing is still OPINIONATED. A short post that names a specific technique and explains its effect is ANALYTICAL.
+**Worked example (pre-annotation):**
+*"Does anyone else feel like the color grading in this film is doing a lot of heavy lifting emotionally?"*
+- Could be SOCIAL (it's a question) or ANALYTICAL (craft observation).
+- **Decision: ANALYTICAL** — the question is rhetorical. Strip it: a specific craft claim (color grading, emotional weight) remains.
 
-Other cases:
+**Other decision rules:**
 
-| Case | Decision rule |
+| Case | Rule |
 |---|---|
-| Analytical with emotional language | If there's a specific craft argument, it's ANALYTICAL regardless of tone |
-| Reactive with a brief "because" | If the "because" is a single undeveloped assertion ("because the plot sucked"), it's REACTIVE |
-| Social post with embedded opinion | If the post is primarily asking/facilitating and the opinion is incidental, it's SOCIAL |
-| Mixed posts | Classify by the *dominant* intent |
+| Analytical post with emotional language | ANALYTICAL — tone doesn't override a specific craft argument |
+| Reactive post with one vague "because" | REACTIVE — a single undeveloped assertion isn't reasoning |
+| Social post with an embedded opinion | SOCIAL — classify by dominant intent |
+| Mixed posts | Dominant intent wins |
 
 ---
 
-### Edge Cases (Genuinely Difficult to Label)
+## 4. Data Collection Plan
 
-These are the cases I expect to encounter during annotation. Document yours in the README.
+**Sources:**
+- r/movies text posts (filtered `is_self=true` — skips link/news posts)
+- r/movies comments (top-scored — better discourse quality signal than new/hot)
+- r/TrueFilm text posts and comments (skews ANALYTICAL, balances the dataset)
 
-**Case A:** *"The third act is where most blockbusters fall apart, and this one is no exception."*
-- Could be ANALYTICAL (craft-level claim) or OPINIONATED (no specifics about *this* film's third act).
-- **Decision:** OPINIONATED — the craft framing is borrowed, not applied. No specific scene or technique is analyzed.
+**Tool:** Pullpush.io public Reddit archive (no API key required), via `scripts/collect_data.py`.
 
-**Case B:** *"I've seen this movie four times and it gets better every time. Fincher just operates on a different level."*
-- REACTIVE vs. OPINIONATED — there's a re-watch claim but no argument.
-- **Decision:** REACTIVE — "operates on a different level" is assertion without content.
+**Target per label:** 50 examples minimum, ideally 55–60 for buffer.
 
-**Case C:** *"Does anyone else feel like the color grading in this film is doing a lot of heavy lifting emotionally?"*
-- SOCIAL (it's a question) vs. ANALYTICAL (craft-level observation).
-- **Decision:** ANALYTICAL — the question is rhetorical; it contains a specific craft observation. The question form is just an invitation to discuss.
+**Actual results (completed):** 214 total examples — ANALYTICAL: 54, OPINIONATED: 42, REACTIVE: 68, SOCIAL: 50. OPINIONATED is the thinnest class at 42 (19.6%), still above the 20% floor. If it had dropped below 40, the plan was to re-run collection targeting r/TrueFilm comments specifically, which generate more reasoning-based posts.
+
+**Annotation method:** Groq (`llama-3.3-70b-versatile`) pre-labeled each post; human reviewer accepted or overrode each suggestion. All 214 were accepted without override (see AI Tool Plan for disclosure implications).
+
+**If a label is underrepresented after 200 examples:** Run collection again filtering to the source most likely to produce that label — r/TrueFilm for ANALYTICAL, r/movies hot comments for REACTIVE. Do not rebalance by duplicating examples.
+
+---
+
+## 5. Evaluation Metrics
+
+**Primary metrics:** F1 (macro) and per-class F1.
+
+**Why not accuracy alone:**
+Accuracy rewards a model that learns to predict the majority class. In this dataset REACTIVE is 31.8% of examples — a model that predicted REACTIVE for everything would be ~32% accurate, which sounds reasonable but is useless. Macro F1 averages F1 across all four classes equally, which means a class with 42 examples counts as much as one with 68. That's the right measure when all four labels matter equally.
+
+**Per-class F1** is also essential because failure modes are class-specific. I expect the model to struggle most on ANALYTICAL vs. OPINIONATED — macro F1 would hide that if the other three classes are easy. Per-class F1 surfaces it.
+
+**Confusion matrix:** Required to see exactly which pairs of labels the model conflates. The ANALYTICAL/OPINIONATED cell is the one to watch.
+
+**Baseline comparison:** Zero-shot `llama-3.3-70b-versatile` via Groq on the same test set. This tells us whether fine-tuning actually helped — if the fine-tuned model doesn't beat the baseline by a meaningful margin, it learned something wrong.
+
+---
+
+## 6. Definition of Success
+
+A classifier is genuinely useful for a community moderation or recommendation tool if it can reliably distinguish substantive posts from noise. That means:
+
+| Threshold | Meaning |
+|---|---|
+| Macro F1 ≥ 0.70 | Minimum acceptable — model is better than guessing on all classes |
+| Macro F1 ≥ 0.75 | "Good enough" — useful as a filter, acceptable for deployment in a low-stakes tool (e.g., sorting posts in a feed) |
+| Macro F1 ≥ 0.80 | Strong — I would trust it to pre-label new examples with human spot-checking |
+| ANALYTICAL F1 ≥ 0.65 | Minimum for that class — it's the hardest and most subjective |
+
+**What would I not accept:** A model that achieves high overall accuracy by mislabeling most ANALYTICAL posts as OPINIONATED. That's the failure mode that matters most, because ANALYTICAL is the label the community cares about surfacing.
+
+**Comparison to baseline:** Fine-tuning should improve macro F1 by at least 5 points over zero-shot Groq. If it doesn't, that's a signal that the dataset is too small or the labels too ambiguous for fine-tuning to add signal.
+
+---
+
+## 7. AI Tool Plan
+
+### Label stress-testing
+Before annotating, I used Claude to generate boundary posts — examples designed to sit exactly between ANALYTICAL and OPINIONATED. Prompt: *"Generate 8 r/movies comments that would be genuinely hard to classify as ANALYTICAL vs. OPINIONATED using these definitions: [definitions]."* This revealed that the "strip the opinion language" test was necessary — without it, sophisticated-sounding OPINIONATED posts were hard to distinguish from weak ANALYTICAL ones.
+
+### Annotation assistance
+Groq (`llama-3.3-70b-versatile`) pre-labeled all 214 examples using a structured prompt with the full label definitions. The human reviewer (me) saw the suggestion and confidence before deciding. All 214 were accepted without override.
+
+**Disclosure:** Because there were zero overrides, the annotations reflect Groq's judgment applied to my label definitions, not independent human judgment. This is a real limitation — the model may have learned Groq's classification heuristics rather than the definitions themselves. This will be noted in the evaluation reflection.
+
+**Tracking:** The `annotated.csv` file includes `groq_suggestion` and `groq_confidence` columns for every row, so it is always clear which label came from the model vs. a human decision.
+
+### Failure analysis
+After training, I will export the wrong predictions from the Colab notebook and prompt Claude: *"Here are N posts the model misclassified. What patterns do you see in the errors? Focus on systematic patterns, not individual cases."* I will then verify each proposed pattern by reading the examples myself before including it in the evaluation write-up.
 
 ---
 
 ## Stretch Features
 
-- [ ] Inter-annotator reliability (get a friend to label 30+ examples)
-- [ ] Confidence calibration analysis
-- [ ] Error pattern analysis
+- [ ] Inter-annotator reliability — have someone else label 30+ examples and compute Cohen's kappa
+- [ ] Confidence calibration — does 90% confidence actually predict correctness better than 60%?
+- [ ] Error pattern analysis (planned — see AI Tool Plan above)
 - [ ] Deployed Gradio interface
 
 ---
 
 ## Timeline
 
-| Step | Est. time | Notes |
+| Step | Status | Notes |
 |---|---|---|
-| Label taxonomy + pilot read | 1h | Done — this doc |
-| Data collection (200+ posts) | 1–2h | `scripts/collect_data.py` locally |
-| Annotation | 2–3h | `scripts/annotate.py`, aim for ≥40 per label |
-| Fine-tuning + baseline + eval | 1–2h | Colab starter notebook (T4 GPU) |
-| Write-up (README eval section) | 1h | Pull numbers from Colab output files |
+| Label taxonomy + pilot read | ✅ Done | This document |
+| Data collection (200+ records) | ✅ Done | 214 examples via Pullpush.io |
+| Annotation | ✅ Done | Groq-assisted, 214 labeled |
+| Fine-tuning + baseline + eval | ⬜ Next | Colab starter notebook (T4 GPU) |
+| README evaluation section | ⬜ Pending | Fill in after Colab |
