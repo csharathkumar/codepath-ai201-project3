@@ -14,14 +14,23 @@ The honest result: the fine-tuned model struggled. It learned two of four labels
 
 ## Label Taxonomy
 
-| Label | ID | One-sentence definition |
-|---|---|---|
-| ANALYTICAL | 0 | Makes a specific, evidence-based argument about craft, narrative, theme, or context — a claim that survives stripping all opinion language |
-| OPINIONATED | 1 | Takes a clear stance and gives a reason, but reasoning is assertion or feeling rather than craft analysis |
-| REACTIVE | 2 | Pure emotional reaction with no supporting argument — one-liners, hyperbole, ratings without explanation |
-| SOCIAL | 3 | Meta-discussion, questions, recommendations, news, or off-topic content — not evaluating a film |
+**ANALYTICAL** — Makes a specific, evidence-based argument about craft, narrative, theme, or context. If you strip all opinion language ("I think", "I loved"), a specific checkable claim about how the film works still remains.
+> *"Villeneuve's use of silence in Dune isn't just aesthetic — it mirrors how Paul experiences prescience: information arriving before meaning. The quieter scenes are structurally doing the same work as the exposition."*
+> *"What made Breaking Bad's finale land is that it rejected catharsis for consequence. Walt doesn't get redemption, he gets closure — and the show is careful not to conflate the two."*
 
-Full definitions, examples, and edge case decision rules are in [`planning.md`](planning.md).
+**OPINIONATED** — Takes a clear stance and gives a reason, but reasoning is assertion or feeling rather than craft analysis.
+> *"Hereditary scared me more than any horror film in years. The family dynamics felt genuinely realistic which made the supernatural stuff hit harder."*
+> *"I think people are way too harsh on the Hobbit trilogy — it's baggy but it's still visually spectacular and the cast is great."*
+
+**REACTIVE** — Pure emotional reaction with no supporting argument — one-liners, hyperbole, ratings without explanation.
+> *"GOAT tier. Not even debatable."*
+> *"Absolute garbage. Two hours of my life I'll never get back."*
+
+**SOCIAL** — Meta-discussion, questions, recommendations, news, or off-topic content — not evaluating a film.
+> *"What's everyone watching this weekend?"*
+> *"Can someone explain the ending of Donnie Darko to me?"*
+
+Full edge case decision rules are in [`planning.md`](planning.md).
 
 **Why four labels?** REACTIVE and OPINIONATED are meaningfully different: one has reasoning, the other doesn't. Collapsing them would lose exactly the distinction the community cares about — "it was bad because the pacing was off" vs. "it was bad." SOCIAL is distinct because it's not making a take at all.
 
@@ -65,6 +74,43 @@ Full definitions, examples, and edge case decision rules are in [`planning.md`](
 **Hyperparameters:** 3 epochs, lr=2e-5, batch size=16 (notebook defaults — no changes made).
 
 **Training behavior:** Loss moved from 1.39 → 1.36 across 3 epochs — a very small decrease indicating the model was not converging. Validation accuracy improved from 21.9% → 43.8%, which sounds significant but on a 32-example validation set represents roughly 7 additional correct predictions.
+
+---
+
+## Baseline
+
+**Model:** Groq `llama-3.3-70b-versatile` (zero-shot — no fine-tuning, no task-specific training)
+
+**How results were collected:** Each of the 33 test examples was sent to the Groq API individually via the Colab notebook's Section 5. The model was given the system prompt below and asked to return only the label name.
+
+**Prompt used:**
+
+```
+You are classifying posts and comments from r/movies and r/TrueFilm, Reddit's film discussion communities.
+
+Assign each post to exactly one of the following categories.
+
+ANALYTICAL: Makes a specific, evidence-based argument about craft, narrative, theme, or context.
+If you strip out all opinion language ("I think", "I loved"), a specific checkable claim about
+how the film works still remains.
+Example: "Villeneuve's use of silence in Dune mirrors how Paul experiences prescience — the
+quieter scenes are structurally doing the same work as the exposition."
+
+OPINIONATED: Takes a clear stance and gives a reason, but reasoning is assertion or feeling
+rather than craft analysis.
+Example: "Hereditary scared me more than any horror film in years. The family dynamics felt
+genuinely realistic which made the supernatural stuff hit harder."
+
+REACTIVE: Pure emotional reaction with no supporting argument. One-liners, hyperbole, ratings
+without explanation.
+Example: "GOAT tier. Not even debatable."
+
+SOCIAL: Meta-discussion, questions, recommendations, news, or off-topic. Not evaluating a film.
+Example: "What's everyone watching this weekend?"
+
+Respond with ONLY the label name — one of: ANALYTICAL, OPINIONATED, REACTIVE, SOCIAL
+Your response must be a single word only. No punctuation, no explanation.
+```
 
 ---
 
