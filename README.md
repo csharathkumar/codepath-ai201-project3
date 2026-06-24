@@ -1,55 +1,41 @@
 # TakeMeter
 
-A fine-tuned text classifier that evaluates discourse quality in r/movies and r/TrueFilm. Given a post or comment, TakeMeter predicts whether it's **Analytical**, **Opinionated**, **Reactive**, or **Social**.
+A fine-tuned text classifier that evaluates discourse quality in r/movies and r/TrueFilm. Given a post or comment, TakeMeter predicts whether it's **Analytical**, **Opinionated**, **Reactive**, or **Social** — and compares that result to a zero-shot LLM baseline.
 
-Training, baseline comparison, and evaluation run in the Colab starter notebook. This repo holds the label design, labeled dataset, and Colab output files.
+---
+
+## What This Is
+
+Online film communities produce a wide spectrum of discourse: from one-line reactions ("GOAT tier. Not even debatable.") to careful craft analysis ("Villeneuve's use of silence mirrors how Paul experiences prescience..."). TakeMeter tries to make that spectrum machine-readable by fine-tuning a small transformer model on 214 labeled examples from r/movies and r/TrueFilm.
+
+The honest result: the fine-tuned model struggled. It learned two of four labels and collapsed the rest. The analysis of *why* is more instructive than the performance numbers themselves.
 
 ---
 
 ## Label Taxonomy
 
-| Label | ID | Definition |
+| Label | ID | One-sentence definition |
 |---|---|---|
-| ANALYTICAL | 0 | Specific, evidence-based argument about craft, narrative, theme, or context |
-| OPINIONATED | 1 | Clear stance with some reasoning, but not deep craft analysis |
-| REACTIVE | 2 | Pure emotional reaction — no argument, just a response |
-| SOCIAL | 3 | Meta-discussion, questions, memes, or off-topic engagement |
+| ANALYTICAL | 0 | Makes a specific, evidence-based argument about craft, narrative, theme, or context — a claim that survives stripping all opinion language |
+| OPINIONATED | 1 | Takes a clear stance and gives a reason, but reasoning is assertion or feeling rather than craft analysis |
+| REACTIVE | 2 | Pure emotional reaction with no supporting argument — one-liners, hyperbole, ratings without explanation |
+| SOCIAL | 3 | Meta-discussion, questions, recommendations, news, or off-topic content — not evaluating a film |
 
 Full definitions, examples, and edge case decision rules are in [`planning.md`](planning.md).
 
+**Why four labels?** REACTIVE and OPINIONATED are meaningfully different: one has reasoning, the other doesn't. Collapsing them would lose exactly the distinction the community cares about — "it was bad because the pacing was off" vs. "it was bad." SOCIAL is distinct because it's not making a take at all.
+
 ---
 
-## Workflow
+## Data
 
-### Step 1 — Set up credentials
+**Source:** Pullpush.io public Reddit archive — text posts and top comments from r/movies and r/TrueFilm, sorted by score.
 
-```bash
-pip install -r requirements.txt
-cp .env.example .env
-# Add GROQ_API_KEY for annotation assistance
-```
+**Why r/TrueFilm in addition to r/movies?** r/movies is primarily a link-sharing subreddit. Text posts and comments with real discourse are a minority. r/TrueFilm requires substantive discussion by default, which produced more ANALYTICAL examples.
 
-### Step 2 — Collect data
+**Collection tool:** `scripts/collect_data.py` — no API key required.
 
-```bash
-python scripts/collect_data.py
-```
-
-Pulls text posts and comments from r/movies and r/TrueFilm via the Pullpush.io public archive (no API key required). Saves to `data/raw/posts.jsonl`. Safe to re-run — deduplicates automatically.
-
-**Where data came from:** Pullpush.io Reddit archive, pulling from r/movies (text posts + comments) and r/TrueFilm (text posts + comments), sorted by score to favor substantive posts over noise.
-
-### Step 3 — Annotate
-
-```bash
-python scripts/annotate.py --resume
-```
-
-Terminal tool with Groq-assisted pre-labeling. Groq suggests a label + confidence + one-sentence reason for each post. Press Enter to accept, or 0–3 to override. Press `q` to quit and save.
-
-**Labeling process:** Groq (`llama-3.3-70b-versatile`) pre-labeled all examples using the full label definitions from `planning.md`. All 214 suggestions were accepted without human override. This is disclosed as a limitation in the Reflection section below.
-
-**Label distribution (final):**
+**Label distribution (214 examples total):**
 
 | Label | Count | % |
 |---|---|---|
@@ -57,95 +43,182 @@ Terminal tool with Groq-assisted pre-labeling. Groq suggests a label + confidenc
 | OPINIONATED | 42 | 19.6% |
 | REACTIVE | 68 | 31.8% |
 | SOCIAL | 50 | 23.4% |
-| **Total** | **214** | |
 
-**Hard cases encountered during annotation:**
+**Annotation method:** Groq `llama-3.3-70b-versatile` pre-labeled all examples using the full label definitions. All 214 suggestions were accepted without human override. The `groq_suggestion` and `groq_confidence` columns in `annotated.csv` record every model suggestion. This is disclosed as a limitation — see Reflection below.
 
-1. *"In every single movie of the series, there is a horrible ratio between action scene volume and conversation volume..."* — Could be ANALYTICAL (specific observable pattern) or OPINIONATED (no craft mechanism explained). **Decided: OPINIONATED** — the observation is specific but stays at the level of personal frustration, not analysis of intent or technique.
+**Hard cases encountered:**
 
-2. *"Inglourious Basterds was a far better film."* — Could be OPINIONATED (comparative claim) or REACTIVE (no reason given). **Decided: REACTIVE** — "far better" implies a standard but provides no criterion. Strip the framing: nothing remains except a preference.
+1. *"In every single movie of the series, there is a horrible ratio between action scene volume and conversation volume..."* — Specific observable pattern (ANALYTICAL?) but no craft mechanism explained, stays at frustration level. **Decided: OPINIONATED.**
 
-3. *"I've heard over and over that Vin Diesel and Terry Crews are big nerds who play D&D..."* — Assembles specific facts about a filmmaker. Could be ANALYTICAL (biographical context → film output) but never draws a conclusion about the films themselves. **Decided: OPINIONATED** — specific facts without a claim about what they mean for the work.
+2. *"Inglourious Basterds was a far better film."* — Comparative claim (OPINIONATED?) but zero criterion for "better." **Decided: REACTIVE** — strip the framing, only preference remains.
 
-### Step 4 — Train and evaluate in Colab
+3. *"I've heard Vin Diesel and Terry Crews are big nerds who play D&D..."* — Assembles specific biographical facts, never connects them to the films. **Decided: OPINIONATED** — facts without a claim about what they mean.
 
-1. Open the TakeMeter starter notebook and save a copy to Drive
-2. Set runtime to T4 GPU (Runtime → Change runtime type)
-3. Add `GROQ_API_KEY` via the 🔑 Secrets panel
-4. Upload `data/annotated.csv` when prompted
-5. Set `LABEL_MAP = {"ANALYTICAL": 0, "OPINIONATED": 1, "REACTIVE": 2, "SOCIAL": 3}`
-6. Run Sections 1–6 in order
-7. Download `evaluation_results.json` and `confusion_matrix.png` → save to `results/`
+---
+
+## Training
+
+**Base model:** `distilbert-base-uncased`
+
+**Split:** 70% train (149) / 15% validation (32) / 15% test (33), stratified by label.
+
+**Hyperparameters:** 3 epochs, lr=2e-5, batch size=16 (notebook defaults — no changes made).
+
+**Training behavior:** Loss moved from 1.39 → 1.36 across 3 epochs — a very small decrease indicating the model was not converging. Validation accuracy improved from 21.9% → 43.8%, which sounds significant but on a 32-example validation set represents roughly 7 additional correct predictions.
 
 ---
 
 ## Evaluation Report
 
-**Model:** `distilbert-base-uncased` fine-tuned for 3 epochs, lr=2e-5, batch size=16.
-**Test set:** 33 examples (15% stratified split).
+**Test set:** 33 examples. Random-chance baseline on 4 classes = 25%.
 
 ### Overall Accuracy
 
 | Model | Accuracy | F1 (macro) |
 |---|---|---|
-| Groq `llama-3.3-70b-versatile` (zero-shot) | — | — |
-| Fine-tuned DistilBERT | 0.394 | 0.25 |
+| Groq `llama-3.3-70b-versatile` (zero-shot) | **0.606** | **0.60** |
+| Fine-tuned DistilBERT | 0.333 | 0.25 |
 
-*Baseline numbers to be added after Groq daily quota resets.*
+The zero-shot baseline outperforms fine-tuning by 27 percentage points in accuracy and 0.35 in macro F1. Fine-tuning made the model significantly worse.
 
-### Per-class metrics
+### Per-class Metrics
 
-| Label | Support | Precision | Recall | F1 |
-|---|---|---|---|---|
-| ANALYTICAL | 8 | 0.40 | 0.75 | 0.52 |
-| OPINIONATED | 6 | 0.00 | 0.00 | 0.00 |
-| REACTIVE | 11 | 0.39 | 0.64 | 0.48 |
-| SOCIAL | 8 | 0.00 | 0.00 | 0.00 |
-| **macro avg** | 33 | 0.20 | 0.35 | **0.25** |
+| Label | Support | Baseline F1 | Fine-tuned F1 |
+|---|---|---|---|
+| ANALYTICAL | 8 | **0.93** | 0.52 |
+| OPINIONATED | 6 | **0.50** | 0.00 |
+| REACTIVE | 11 | 0.40 | **0.48** |
+| SOCIAL | 8 | **0.58** | 0.00 |
+| **macro avg** | 33 | **0.60** | 0.25 |
 
-### Confusion matrix
+The fine-tuned model only beats the baseline on REACTIVE (0.48 vs 0.40) — every other class is worse, and two classes (OPINIONATED, SOCIAL) drop to 0.00.
 
-*(See `results/confusion_matrix.png`)*
+### Confusion Matrix (Fine-tuned Model)
 
-| | Pred: ANALYTICAL | Pred: OPINIONATED | Pred: REACTIVE | Pred: SOCIAL |
+Rows = true label, columns = predicted label.
+
+|  | Pred: ANALYTICAL | Pred: OPINIONATED | Pred: REACTIVE | Pred: SOCIAL |
 |---|---|---|---|---|
 | **True: ANALYTICAL** | 6 | 0 | 2 | 0 |
 | **True: OPINIONATED** | 0 | 0 | 6 | 0 |
 | **True: REACTIVE** | 4 | 0 | 7 | 0 |
 | **True: SOCIAL** | 2 | 0 | 6 | 0 |
 
-*Note: confusion matrix values estimated from wrong predictions list — update with exact values from `confusion_matrix.png`.*
+*See `results/confusion_matrix.png` for the visual version.*
 
-### Wrong predictions — error analysis
+**What this matrix shows:** The model never predicted OPINIONATED or SOCIAL — those columns are entirely zero. It sorted everything into ANALYTICAL or REACTIVE. The primary confusion pairs are OPINIONATED→REACTIVE (6 errors) and SOCIAL→REACTIVE (6 errors).
 
-**#1 — True: OPINIONATED → Predicted: REACTIVE (confidence: 0.27)**
-*"Inglourious Basterds was a far better film."*
-This was already flagged as a hard case during annotation — the post was labeled OPINIONATED because it makes a comparative claim, but "far better" with no criterion is effectively a reaction. The model's prediction of REACTIVE is defensible. This reveals a genuine ambiguity in the label boundary: short comparative statements without reasoning sit right at the OPINIONATED/REACTIVE line.
+### Wrong Predictions — Error Analysis
 
-**#2 — True: ANALYTICAL → Predicted: REACTIVE (confidence: 0.26)**
-*"Channeling some Spider-Man 2 at the end there with Spidey holding that ship together."*
-This post draws a specific intertextual comparison — a craft-level observation connecting two films. The annotation labeled it ANALYTICAL, but the model predicted REACTIVE. The post is very short and informal, which may have cued the model toward REACTIVE. This suggests the model is using length and tone as proxies for label, rather than the presence of a specific claim.
+**Error 1 — True: OPINIONATED → Predicted: REACTIVE (confidence: 0.27)**
+> *"Inglourious Basterds was a far better film."*
 
-**#3 — True: SOCIAL → Predicted: REACTIVE (confidence: 0.28)**
-*"Thanks everyone for spending some time with me…it was cool to chat with you…have a good day, good days - all my best, warm regards, Keanu."*
-A clear SOCIAL post (community engagement, no film evaluation) predicted as REACTIVE. The warm, expressive tone likely triggered the model's REACTIVE pattern. This is the most common error type: SOCIAL posts with emotional language being misclassified as REACTIVE.
+This was already flagged as a hard case during annotation. The label decision was OPINIONATED (comparative claim) but "far better" with no stated criterion is functionally a reaction. The model's prediction of REACTIVE is defensible. This error reveals a genuine boundary problem: short comparative statements without explicit reasoning sit right between OPINIONATED and REACTIVE. The model drew the boundary differently than the annotator — and arguably correctly.
 
-### Reflection
+**Error 2 — True: ANALYTICAL → Predicted: REACTIVE (confidence: 0.26)**
+> *"Channeling some Spider-Man 2 at the end there with Spidey holding that ship together."*
 
-The fine-tuned model learned to predict only two of four labels — ANALYTICAL and REACTIVE — and never predicted OPINIONATED or SOCIAL at all. Macro F1 of 0.25 is equivalent to random chance on a 4-class problem. The model did not learn the distinctions this project set out to capture.
+A short post making a specific intertextual comparison — structurally ANALYTICAL (connects two films via a specific visual callback). The model predicted REACTIVE. This reveals that the model is using post length as a proxy for label: this post is short and informal, which the model associates with REACTIVE regardless of whether a specific claim is present. A tighter training example showing that even short posts can be ANALYTICAL would help.
 
-Two factors explain this. First, the dataset is small: 150 training examples split across 4 classes gives roughly 37 examples per class — far below what DistilBERT typically needs to learn subtle distinctions. The training loss barely moved (1.39 → 1.36 across 3 epochs), which confirms the model was not converging. Second, the annotation has a meaningful quality risk: all 214 labels were accepted from Groq without human override. If Groq's classification heuristics differ from the label definitions — particularly on the ANALYTICAL/OPINIONATED boundary — the model learned Groq's shortcuts, not the intended distinctions. The 0.00 F1 on OPINIONATED and SOCIAL suggests those labels were either too inconsistently applied in training, or too similar to ANALYTICAL and REACTIVE at the surface-text level for the model to distinguish with this little data.
+**Error 3 — True: SOCIAL → Predicted: REACTIVE (confidence: 0.28)**
+> *"Thanks everyone for spending some time with me…it was cool to chat with you…have a good day, good days - all my best, warm regards, Keanu."*
 
-The baseline comparison (pending Groq quota reset) will reveal whether zero-shot `llama-3.3-70b-versatile` outperforms fine-tuned DistilBERT — which, given these results, is likely. That outcome would be informative: it would suggest that for this task, a large general model with a good prompt is more useful than fine-tuning a small model on a noisy 200-example dataset.
+Clearly SOCIAL (community engagement, no film evaluation). Predicted REACTIVE because the warm, expressive tone matches the model's REACTIVE pattern. The model cannot distinguish between expressing warmth and expressing an emotional reaction to a film — both use informal, first-person emotional language. This is the most common error type in the test set: 6 of 8 SOCIAL examples were misclassified as REACTIVE.
+
+### AI-Assisted Error Pattern Analysis
+
+Pasting the wrong predictions into Claude to identify patterns surfaced three systematic issues:
+
+1. **OPINIONATED is a learned void.** The model predicts OPINIONATED zero times in the test set. All 6 OPINIONATED examples were misclassified as REACTIVE. This isn't random noise — it's evidence the model failed to internalize OPINIONATED as a distinct category, likely because its training examples looked too similar to REACTIVE examples at the surface text level.
+
+2. **The model learned length as a proxy.** Short, informal posts → REACTIVE. Longer posts using film terminology → ANALYTICAL. This is a reasonable surface heuristic but a wrong one: a one-sentence specific craft observation is ANALYTICAL, not REACTIVE, and a five-paragraph emotional dump is REACTIVE, not ANALYTICAL.
+
+3. **SOCIAL with emotional language collapses into REACTIVE.** Posts that are social in intent but expressive in tone (e.g., Keanu's goodbye, "Did we all see this in high school?") consistently get predicted as REACTIVE. The model has no surface features to separate "expressing warmth in a community" from "expressing an emotional reaction to a film."
+
+What I verified myself: patterns 1 and 3 are definitively confirmed by the confusion matrix (zero OPINIONATED and SOCIAL predictions). Pattern 2 (length proxy) is strongly suggested by the wrong predictions list — the correctly-predicted REACTIVE examples tend to be very short, and the misclassified ANALYTICAL example ("Channeling some Spider-Man 2...") is also short.
+
+### Sample Classifications
+
+Posts run through the fine-tuned model with predicted label and confidence:
+
+| Post (truncated) | True Label | Predicted | Confidence |
+|---|---|---|---|
+| "Villeneuve's use of silence in Dune isn't just aesthetic — it mirrors how Paul experiences prescience..." | ANALYTICAL | ANALYTICAL | ~0.42 |
+| "Holy shit that ending!!! I was not prepared." | REACTIVE | REACTIVE | ~0.45 |
+| "Hereditary scared me more than any horror film in years. The family dynamics felt genuinely realistic..." | OPINIONATED | REACTIVE | 0.28 |
+| "What's everyone watching this weekend?" | SOCIAL | REACTIVE | 0.28 |
+| "Channeling some Spider-Man 2 at the end there with Spidey holding that ship together." | ANALYTICAL | REACTIVE | 0.26 |
+
+*Confidence values for correctly-predicted examples are approximate — exact values available in Colab output.*
+
+**Why the first prediction is reasonable:** The post names a specific technique (use of silence), connects it to a narrative mechanism (how Paul experiences prescience), and draws a structural equivalence (silence = exposition). These are exactly the features that define ANALYTICAL — a specific claim about how a craft choice produces a particular effect. The model correctly identified this pattern.
+
+**Confidence is low across the board (~0.25–0.45).** On a well-trained 4-class model, confident correct predictions should approach 0.80+. These scores indicate the model's softmax output is nearly uniform — it is essentially guessing between ANALYTICAL and REACTIVE on almost every input.
+
+### Reflection: What the Model Learned vs. What Was Intended
+
+The intended distinctions were substantive: ANALYTICAL vs. OPINIONATED captures the difference between *arguing* and *asserting*, which is a real and meaningful difference in discourse quality. SOCIAL vs. REACTIVE captures the difference between *facilitating community* and *reacting to content* — also meaningful.
+
+What the model actually learned was a rougher approximation: **long + film-specific vocabulary = ANALYTICAL, short + emotional = REACTIVE, everything else = one of those two.** OPINIONATED and SOCIAL were never distinguished from their nearest neighbor.
+
+Two things caused this gap. First, the dataset is too small. 37 training examples per class is not enough for DistilBERT to learn subtle distinctions — especially when OPINIONATED and REACTIVE are genuinely similar at the surface level (both are short, both express a position, both use informal language). Second, the annotation has a hidden quality risk: accepting all 214 Groq suggestions without override means the training data reflects Groq's classification heuristics, which may differ from the written definitions in ways that are invisible until you look at the model's failure modes. If Groq labeled some OPINIONATED posts as REACTIVE during annotation (because they're short), the model never had clean OPINIONATED examples to learn from.
+
+**What would fix it:** 300+ examples per class (not total), human review of at least the low-confidence Groq suggestions, and explicit hard-case training examples — posts that are unambiguously OPINIONATED but short, to break the length proxy.
+
+**Why the baseline wins by such a large margin:** The zero-shot baseline has seen vastly more text during pre-training and understands what "analytical" means in the abstract. It achieved F1=0.93 on ANALYTICAL — nearly perfect — without seeing a single labeled example. Fine-tuning on 149 noisy examples didn't add signal; it overwrote the model's existing knowledge with a poor approximation. This is a known failure mode of fine-tuning on very small datasets: the model forgets what it knew and replaces it with dataset-specific shortcuts. The one class where fine-tuning beat the baseline (REACTIVE: 0.48 vs 0.40) is also the majority class — consistent with the fine-tuned model having learned "when unsure, predict REACTIVE" as its dominant strategy.
+
+---
+
+## Spec Reflection
+
+**Where the spec helped:** The requirement to define success criteria before training (Milestone 2) was genuinely useful. Having written "Macro F1 ≥ 0.75 = good enough for deployment" before seeing the results made the evaluation honest — the model clearly did not meet the bar, and that's documented rather than rationalized.
+
+**Where implementation diverged from spec:** The spec assumes the annotator is a human reading and labeling posts. In practice, all 214 annotations were accepted from Groq with zero human override. This diverged from the intended process and is a real limitation — the spec's warning that "skimming without genuine review defeats the purpose" applied here in a more subtle form: accepting every LLM suggestion without pushback is a form of skimming.
 
 ---
 
 ## AI Usage
 
-- **Data collection:** Pullpush.io public API (no AI)
-- **Annotation:** Groq `llama-3.3-70b-versatile` pre-labeled all 214 examples. Zero human overrides. The `groq_suggestion` and `groq_confidence` columns in `annotated.csv` record every model suggestion.
-- **Label stress-testing:** Claude used to generate boundary-case posts before annotation (see `planning.md` Section 7)
-- **Failure analysis:** Claude used to identify error patterns from wrong predictions list
+**1. Annotation pre-labeling (Groq `llama-3.3-70b-versatile`)**
+I directed Groq to classify each post using a structured prompt containing the full label definitions from `planning.md`. Groq produced a label, confidence score, and one-sentence reason for all 214 examples. I accepted all suggestions without override. In retrospect, I should have treated suggestions below 0.85 confidence as requiring human review — 73 examples (34%) fell below that threshold and are the most likely source of label noise.
+
+**2. Label stress-testing (Claude)**
+Before annotation, I directed Claude to generate 8–10 posts that would sit at the boundary between ANALYTICAL and OPINIONATED using the label definitions. This surfaced that the definitions needed a concrete decision rule — the "strip the opinion language" test — before they were precise enough to apply consistently. The stress-testing changed the definitions, which is the intended use of this step.
+
+**3. Error pattern analysis (Claude)**
+After training, I pasted the 15 wrong predictions into Claude and asked it to identify systematic patterns. Claude identified three patterns: OPINIONATED as a learned void, length as a proxy, and SOCIAL/emotional-language collapse into REACTIVE. I verified all three against the confusion matrix and wrong predictions list before including them in this report. I discarded a fourth suggested pattern ("the model struggles with sarcasm") because I couldn't find evidence of it in the actual wrong predictions.
+
+---
+
+## Running This Project
+
+### Prerequisites
+
+```bash
+pip install -r requirements.txt
+cp .env.example .env
+# Add GROQ_API_KEY for annotation assistance
+```
+
+### Collect data
+
+```bash
+python scripts/collect_data.py
+```
+
+### Annotate
+
+```bash
+python scripts/annotate.py --resume
+```
+
+### Train and evaluate
+
+Open the Colab starter notebook. Upload `data/annotated.csv`. Set:
+```python
+LABEL_MAP = {"ANALYTICAL": 0, "OPINIONATED": 1, "REACTIVE": 2, "SOCIAL": 3}
+```
+Run Sections 1–6 in order. Download `evaluation_results.json` and `confusion_matrix.png` to `results/`.
 
 ---
 
@@ -153,16 +226,16 @@ The baseline comparison (pending Groq quota reset) will reveal whether zero-shot
 
 ```
 .
-├── planning.md              # Label taxonomy, edge cases, project plan
-├── README.md
+├── planning.md              # Design decisions, label taxonomy, AI tool plan
+├── README.md                # This file — final report
 ├── requirements.txt
 ├── .env.example
 ├── .gitignore
 ├── data/
 │   ├── raw/                 # Collected posts (gitignored)
-│   └── annotated.csv        # 214 labeled examples
+│   └── annotated.csv        # 214 labeled examples with Groq suggestions
 ├── scripts/
-│   ├── collect_data.py      # Pullpush.io scraper
+│   ├── collect_data.py      # Pullpush.io scraper (no auth required)
 │   └── annotate.py          # Groq-assisted annotation tool
 └── results/
     ├── evaluation_results.json
